@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Araia | Buscador de pictogramas</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  </head>
+  <body>
+    <div class="page-shell home-shell">
+      <nav class="top-nav compact-nav">
+        <a class="nav-brand" href="{{ url_for('home') }}">Araia</a>
+        <div class="nav-links">
+          <a href="{{ url_for('home') }}">Buscador</a>
+          <a href="{{ url_for('digital_library') }}">Biblioteca digital</a>
+          <a href="{{ url_for('oca') }}">Oca interactiva</a>
+        </div>
+        <div class="profile-switcher">
+          <form method="post" action="{{ url_for('select_profile') }}" class="inline-form">
+            <select name="profile_name">
+              {% for profile in profiles %}
+              <option value="{{ profile }}" {% if profile == active_profile %}selected{% endif %}>{{ profile }}</option>
+              {% endfor %}
+            </select>
+            <button type="submit" class="compact">Perfil</button>
+          </form>
+          <form method="post" action="{{ url_for('create_profile') }}" class="inline-form">
+            <input type="text" name="new_profile_name" placeholder="Nuevo perfil">
+            <button type="submit" class="secondary compact">Crear</button>
+          </form>
+        </div>
+      </nav>
+
+      <section class="panel search-panel-main">
+        <div class="search-panel-head">
+          <div>
+            <p class="eyebrow">Buscador</p>
+            <h1>Encuentra pictogramas rápido</h1>
+          </div>
+          <div class="quick-stats">
+            <span>{{ stats.total }} visibles</span>
+            <span>{{ stats.guardados }} guardados</span>
+            <span>{{ stats.pendientes }} pendientes</span>
+          </div>
+        </div>
+
+        <form method="get" class="primary-search-form">
+          <label class="search-box large-search">
+            <span>Palabra</span>
+            <input type="text" name="q" value="{{ filters.search }}" placeholder="comer, barco, rana...">
+          </label>
+          <label>
+            <span>Categoría</span>
+            <select name="categoria">
+              <option value="">Todas</option>
+              {% for category in structure.keys() %}
+              <option value="{{ category }}" {% if filters.categoria == category %}selected{% endif %}>{{ category }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>
+            <span>Subcategoría</span>
+            <input type="text" name="subcategoria" value="{{ filters.subcategoria }}" placeholder="acciones_diarias">
+          </label>
+          <label>
+            <span>Variante</span>
+            <select name="variante">
+              <option value="">Todas</option>
+              <option value="blanco_y_negro" {% if filters.variante == 'blanco_y_negro' %}selected{% endif %}>Blanco y negro</option>
+              <option value="color" {% if filters.variante == 'color' %}selected{% endif %}>Color</option>
+            </select>
+          </label>
+          <input type="hidden" name="search_mode" value="{{ filters.search_mode }}">
+          <input type="hidden" name="letter" value="{{ filters.letter }}">
+          <button type="submit">Buscar</button>
+        </form>
+
+        <div class="alpha-modes">
+          {% set mode_labels = {'starts_with': 'Empieza por', 'contains': 'Contiene', 'ends_with': 'Termina por', 'exact': 'Exacta'} %}
+          {% for mode, label in mode_labels.items() %}
+          <div class="alpha-mode-row">
+            <strong class="mode-label{% if filters.search_mode == mode %} active{% endif %}">{{ label }}</strong>
+            <div class="alphabet-row compact-alphabet">
+              <a class="alphabet-pill{% if filters.search_mode == mode and not filters.letter %} active{% endif %}" href="{{ url_for('home', q=filters.search, search_mode=mode, categoria=filters.categoria, subcategoria=filters.subcategoria, variante=filters.variante) }}">Todas</a>
+              {% for letter in alphabet %}
+              <a class="alphabet-pill{% if filters.search_mode == mode and filters.letter == letter %} active{% endif %}" href="{{ url_for('home', q=filters.search, search_mode=mode, categoria=filters.categoria, subcategoria=filters.subcategoria, variante=filters.variante, letter=letter) }}">{{ letter }}</a>
+              {% endfor %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="panel recent-strip">
+        <div class="panel-head inline-head">
+          <div>
+            <p class="eyebrow">Recientes</p>
+            <h2>Recién creados</h2>
+          </div>
+          <form method="post" action="{{ url_for('scan') }}" class="inline-form">
+            <button type="submit" class="secondary compact">Sincronizar carpeta</button>
+          </form>
+        </div>
+        <div class="mini-grid recent-mini-grid">
+          {% for record in recent_records %}
+          <article class="mini-card">
+            <img src="{{ url_for('media') }}?path={{ record.ruta_archivo | urlencode }}" alt="{{ record.palabra }}">
+            <strong>{{ record.palabra }}</strong>
+          </article>
+          {% else %}
+          <p class="description">Todavía no hay pictogramas recientes.</p>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="content-grid home-content-grid">
+        <aside class="panel side-rail compact-rail">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Prioridad</p>
+              <h2>Pedidos</h2>
+            </div>
+          </div>
+          <div class="daily-batch compact-batch">
+            <p class="mini-label">2 diarios recomendados</p>
+            {% for item in daily_batch %}
+            <article class="request-card highlighted stack-card">
+              <strong>{{ item.palabra }}</strong>
+              <p>{{ item.categoria_gramatical }} · {{ item.subcategoria }}</p>
+              <span>Prioridad {{ item.priority_score }}</span>
+            </article>
+            {% else %}
+            <p class="description">Sin solicitudes pendientes.</p>
+            {% endfor %}
+          </div>
+
+          <details class="mini-section" open>
+            <summary>Solicitar pictograma</summary>
+            <form method="post" action="{{ url_for('add_request') }}" class="request-form compact-form">
+              <input type="text" name="palabra" placeholder="Palabra" required>
+              <select name="categoria_gramatical" required>
+                {% for category in structure.keys() %}
+                <option value="{{ category }}">{{ category }}</option>
+                {% endfor %}
+              </select>
+              <input type="text" name="subcategoria" placeholder="Subcategoría" required>
+              <textarea name="detalle" rows="3" placeholder="Qué necesitas o para qué"></textarea>
+              <button type="submit" class="compact">Enviar</button>
+            </form>
+          </details>
+
+          <details class="mini-section">
+            <summary>Opiniones y sugerencias</summary>
+            <form method="post" action="{{ url_for('add_feedback') }}" class="request-form compact-form">
+              <select name="tipo">
+                <option value="comentario">Comentario</option>
+                <option value="falta">Qué falta</option>
+                <option value="sugerencia">Sugerencia</option>
+                <option value="mejora">Qué mejorarías</option>
+              </select>
+              <input type="text" name="palabra" placeholder="Palabra relacionada">
+              <textarea name="texto" rows="3" placeholder="Tu mensaje"></textarea>
+              <button type="submit" class="secondary compact">Enviar</button>
+            </form>
+            <div class="compact-feedback-list">
+              {% for item in feedback_items[:4] %}
+              <article class="feedback-card compact-feedback-card">
+                <strong>{{ item.tipo }}</strong>
+                <p>{{ item.texto }}</p>
+              </article>
+              {% else %}
+              <p class="description">Sin comentarios todavía.</p>
+              {% endfor %}
+            </div>
+          </details>
+
+          <details class="mini-section">
+            <summary>Importación</summary>
+            <p class="description">Añade archivos a <code>{{ continuous_folder }}</code> y procesa la cola.</p>
+            <form method="post" action="{{ url_for('continuous_import') }}" class="inline-form">
+              <button type="submit" class="compact">Procesar ingesta continua</button>
+            </form>
+          </details>
+        </aside>
+
+        <section class="panel results-panel">
+          <div class="panel-head inline-head">
+            <div>
+              <p class="eyebrow">Resultados</p>
+              <h2>{{ records|length }} pictogramas</h2>
+            </div>
+          </div>
+
+          {% if records %}
+          <div class="cards-grid">
+            {% for record in records %}
+            <article class="picto-card">
+              <div class="picto-visual">
+                <img src="{{ url_for('media') }}?path={{ record.ruta_archivo | urlencode }}" alt="{{ record.palabra }}">
+              </div>
+              <div class="picto-title">
+                <h3>{{ record.palabra }}</h3>
+                <p>{{ record.categoria_gramatical }} · {{ record.subcategoria or 'sin subcategoría' }}</p>
+              </div>
+              <div class="picto-meta">
+                <span>{{ record.variante or 'sin variante' }}</span>
+                <span>{{ record.categoria_semantica or 'general' }}</span>
+              </div>
+              <div class="card-actions">
+                <form method="post" action="{{ url_for('remove_from_library') if record.in_library else url_for('add_to_library') }}">
+                  <input type="hidden" name="path" value="{{ record.ruta_archivo }}">
+                  <input type="hidden" name="next" value="{{ request.full_path }}">
+                  <button type="submit" class="secondary compact">{% if record.in_library %}Quitar{% else %}Guardar{% endif %}</button>
+                </form>
+                <a class="compact-download" href="{{ url_for('download') }}?path={{ record.ruta_archivo | urlencode }}">Descargar</a>
+              </div>
+            </article>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="empty-state compact-empty-state">
+            <h3>No hay coincidencias</h3>
+            <p>Prueba otra letra, cambia el modo de búsqueda o limpia filtros.</p>
+          </div>
+          {% endif %}
+        </section>
+      </section>
+    </div>
+  </body>
+</html>

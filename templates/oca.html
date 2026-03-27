@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Araia | Oca interactiva</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  </head>
+  <body>
+    <div class="page-shell">
+      <nav class="top-nav">
+        <a class="nav-brand" href="{{ url_for('home') }}">Araia</a>
+        <div class="nav-links">
+          <a href="{{ url_for('home') }}">Buscador</a>
+          <a href="{{ url_for('digital_library') }}">Biblioteca digital</a>
+          <a href="{{ url_for('oca') }}">Oca interactiva</a>
+        </div>
+        <div class="profile-switcher">
+          <form method="post" action="{{ url_for('select_profile') }}" class="inline-form">
+            <select name="profile_name">
+              {% for profile in profiles %}
+              <option value="{{ profile }}" {% if profile == active_profile %}selected{% endif %}>{{ profile }}</option>
+              {% endfor %}
+            </select>
+            <button type="submit" class="compact">Cambiar perfil</button>
+          </form>
+          <form method="post" action="{{ url_for('create_profile') }}" class="inline-form">
+            <input type="text" name="new_profile_name" placeholder="Nuevo perfil">
+            <button type="submit" class="secondary compact">Crear</button>
+          </form>
+        </div>
+      </nav>
+
+      <header class="hero hero-compact">
+        <div class="hero-copy">
+          <p class="eyebrow">Juego</p>
+          <h1>Oca interactiva con tus pictos.</h1>
+          <p class="hero-text">Tira el dado, avanza por el tablero y usa cada casilla como disparador visual de lenguaje.</p>
+        </div>
+        <div class="hero-stats">
+          <article class="stat-card">
+            <span>Pictos usados</span>
+            <strong>{{ records|length }}</strong>
+          </article>
+          <article class="stat-card">
+            <span>Jugadores</span>
+            <strong>2</strong>
+          </article>
+          <article class="stat-card">
+            <span>Casillas</span>
+            <strong>{{ cells|length }}</strong>
+          </article>
+        </div>
+      </header>
+
+      {% if cells %}
+      <section class="oca-layout">
+        <aside class="panel oca-control">
+          <div class="panel-head">
+            <p class="eyebrow">Control</p>
+            <h2>Partida</h2>
+          </div>
+          <p class="oca-copy">Selecciona los pictos, juega con dos personas y mueve cada ficha arrastrándola con ratón o dedo. También puedes usar el dado para avanzar automáticamente.</p>
+          <form method="get" action="{{ url_for('oca') }}" class="player-form">
+            {% for record in records %}
+            <input type="hidden" name="selected_paths" value="{{ record.ruta_archivo }}">
+            {% endfor %}
+            <label>
+              <span>Jugador 1</span>
+              <input type="text" name="player_one" value="{{ player_one }}">
+            </label>
+            <label>
+              <span>Jugador 2</span>
+              <input type="text" name="player_two" value="{{ player_two }}">
+            </label>
+            <button type="submit" class="compact">Actualizar nombres</button>
+          </form>
+          <div class="players-box">
+            <article class="player-chip player-one" data-player="0">
+              <span class="token visible"></span>
+              <strong>{{ player_one }}</strong>
+            </article>
+            <article class="player-chip player-two" data-player="1">
+              <span class="token visible"></span>
+              <strong>{{ player_two }}</strong>
+            </article>
+          </div>
+          <div class="dice-box">
+            <div class="dice-value" id="dice-value">1</div>
+            <div class="dice-actions">
+              <button type="button" id="roll-button-player-0">Tirar por {{ player_one }}</button>
+              <button type="button" id="roll-button-player-1" class="secondary">Tirar por {{ player_two }}</button>
+            </div>
+          </div>
+          <div class="progress-box">
+            <p>Casillas actuales</p>
+            <strong id="position-value">{{ player_one }}: 1 · {{ player_two }}: 1</strong>
+          </div>
+          <div class="active-card" id="active-card">
+            <img src="{{ url_for('media') }}?path={{ cells[0].ruta_archivo | urlencode }}" alt="{{ cells[0].palabra }}" id="active-image">
+            <h3 id="active-word">{{ cells[0].palabra }}</h3>
+          </div>
+        </aside>
+
+        <main class="panel oca-board-panel">
+          <div class="oca-board" id="oca-board">
+            {% for cell in cells %}
+            <article class="oca-cell{% if loop.first %} active{% endif %}" data-cell="{{ cell.number }}" data-palabra="{{ cell.palabra }}" data-image="{{ url_for('media') }}?path={{ cell.ruta_archivo | urlencode }}">
+              <span class="cell-number">{{ cell.number }}</span>
+              <img src="{{ url_for('media') }}?path={{ cell.ruta_archivo | urlencode }}" alt="{{ cell.palabra }}">
+              <strong>{{ cell.palabra }}</strong>
+            </article>
+            {% endfor %}
+          </div>
+          <div class="floating-tokens">
+            <button type="button" class="draggable-token player-one visible" id="token-0" aria-label="{{ player_one }}"></button>
+            <button type="button" class="draggable-token player-two visible" id="token-1" aria-label="{{ player_two }}"></button>
+          </div>
+        </main>
+      </section>
+
+      <script>
+        (() => {
+          const cells = Array.from(document.querySelectorAll(".oca-cell"));
+          const diceValue = document.getElementById("dice-value");
+          const positionValue = document.getElementById("position-value");
+          const activeImage = document.getElementById("active-image");
+          const activeWord = document.getElementById("active-word");
+          const board = document.getElementById("oca-board");
+          const tokens = [
+            { element: document.getElementById("token-0"), position: 0, name: {{ player_one|tojson }} },
+            { element: document.getElementById("token-1"), position: 0, name: {{ player_two|tojson }} }
+          ];
+
+          function cellCenter(index) {
+            const cellRect = cells[index].getBoundingClientRect();
+            const boardRect = board.getBoundingClientRect();
+            return {
+              x: cellRect.left - boardRect.left + (cellRect.width / 2),
+              y: cellRect.top - boardRect.top + (cellRect.height / 2)
+            };
+          }
+
+          function placeToken(playerIndex) {
+            const point = cellCenter(tokens[playerIndex].position);
+            const token = tokens[playerIndex].element;
+            token.style.left = `${point.x - 18}px`;
+            token.style.top = `${point.y - 18}px`;
+          }
+
+          function updateBoard() {
+            cells.forEach((cell, index) => {
+              cell.classList.toggle("active", tokens.some(token => token.position === index));
+            });
+            tokens.forEach((_, index) => placeToken(index));
+            const activeCell = cells[tokens[0].position];
+            positionValue.textContent = `${tokens[0].name}: ${tokens[0].position + 1} · ${tokens[1].name}: ${tokens[1].position + 1}`;
+            activeImage.src = activeCell.dataset.image;
+            activeWord.textContent = activeCell.dataset.palabra;
+          }
+
+          function nearestCellIndex(clientX, clientY) {
+            let bestIndex = 0;
+            let bestDistance = Infinity;
+            cells.forEach((cell, index) => {
+              const rect = cell.getBoundingClientRect();
+              const x = rect.left + rect.width / 2;
+              const y = rect.top + rect.height / 2;
+              const distance = Math.hypot(clientX - x, clientY - y);
+              if (distance < bestDistance) {
+                bestDistance = distance;
+                bestIndex = index;
+              }
+            });
+            return bestIndex;
+          }
+
+          function attachDrag(playerIndex) {
+            const token = tokens[playerIndex].element;
+            let pointerId = null;
+
+            token.addEventListener("pointerdown", (event) => {
+              pointerId = event.pointerId;
+              token.setPointerCapture(pointerId);
+              token.classList.add("dragging");
+            });
+
+            token.addEventListener("pointermove", (event) => {
+              if (pointerId !== event.pointerId) return;
+              const boardRect = board.getBoundingClientRect();
+              token.style.left = `${event.clientX - boardRect.left - 18}px`;
+              token.style.top = `${event.clientY - boardRect.top - 18}px`;
+            });
+
+            token.addEventListener("pointerup", (event) => {
+              if (pointerId !== event.pointerId) return;
+              tokens[playerIndex].position = nearestCellIndex(event.clientX, event.clientY);
+              token.classList.remove("dragging");
+              pointerId = null;
+              updateBoard();
+            });
+
+            token.addEventListener("pointercancel", () => {
+              token.classList.remove("dragging");
+              pointerId = null;
+              updateBoard();
+            });
+          }
+
+          function rollForPlayer(playerIndex) {
+            const roll = Math.floor(Math.random() * 6) + 1;
+            diceValue.textContent = String(roll);
+            tokens[playerIndex].position = (tokens[playerIndex].position + roll) % cells.length;
+            updateBoard();
+          }
+
+          document.getElementById("roll-button-player-0").addEventListener("click", () => rollForPlayer(0));
+          document.getElementById("roll-button-player-1").addEventListener("click", () => rollForPlayer(1));
+
+          tokens.forEach((_, index) => {
+            attachDrag(index);
+          });
+
+          window.addEventListener("resize", updateBoard);
+          updateBoard();
+        })();
+      </script>
+      {% else %}
+      <section class="panel">
+        <article class="empty-state">
+          <h3>No hay pictogramas suficientes para la oca</h3>
+          <p>Guarda algunos pictos en tu biblioteca digital y vuelve a intentarlo.</p>
+        </article>
+      </section>
+      {% endif %}
+    </div>
+  </body>
+</html>

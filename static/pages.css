@@ -1,0 +1,28 @@
+.hidden {
+  display: none !important;
+}
+
+.static-shell .nav-links a {
+  min-height: 40px;
+}
+
+.static-note,
+.saved-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  padding: 7px 10px;
+  background: rgba(255,255,255,0.92);
+  font-size: 0.82rem;
+}
+
+.saved-chip.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.request-card button.vote-button {
+  min-height: 36px;
+  padding: 8px 10px;
+}

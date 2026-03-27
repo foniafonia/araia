@@ -1,0 +1,138 @@
+{
+  "generated_at": "2026-03-27T10:39:13.747151",
+  "count": 12,
+  "records": [
+    {
+      "id": 1651,
+      "palabra": "fonema_m",
+      "variante": "color",
+      "categoria_gramatical": "fonologia",
+      "subcategoria": "fonemas",
+      "categoria_semantica": "fonema",
+      "descripcion": "representacion del fonema m",
+      "fecha_creacion": "2026-03-26T11:50:41",
+      "image_path": "pictogramas/fonologia/fonemas/fonema_m_color.png"
+    },
+    {
+      "id": 1659,
+      "palabra": "rana",
+      "variante": "color",
+      "categoria_gramatical": "sustantivos",
+      "subcategoria": "animales",
+      "categoria_semantica": "animal",
+      "descripcion": "animal anfibio de color verde",
+      "fecha_creacion": "2026-03-26T11:50:41",
+      "image_path": "pictogramas/sustantivos/animales/rana_color.png"
+    },
+    {
+      "id": 1661,
+      "palabra": "barco",
+      "variante": "color",
+      "categoria_gramatical": "sustantivos",
+      "subcategoria": "objetos",
+      "categoria_semantica": "transporte",
+      "descripcion": "medio de transporte acuatico",
+      "fecha_creacion": "2026-03-26T11:50:41",
+      "image_path": "pictogramas/sustantivos/objetos/barco_color.png"
+    },
+    {
+      "id": 1662,
+      "palabra": "boligrafo",
+      "variante": "color",
+      "categoria_gramatical": "sustantivos",
+      "subcategoria": "objetos",
+      "categoria_semantica": "escritura",
+      "descripcion": "instrumento para escribir",
+      "fecha_creacion": "2026-03-26T11:50:41",
+      "image_path": "pictogramas/sustantivos/objetos/boligrafo_color.png"
+    },
+    {
+      "id": 1660,
+      "palabra": "televisor",
+      "variante": "color",
+      "categoria_gramatical": "sustantivos",
+      "subcategoria": "objetos",
+      "categoria_semantica": "hogar",
+      "descripcion": "Importado desde ingesta continua",
+      "fecha_creacion": "2026-03-26T11:50:41",
+      "image_path": "pictogramas/sustantivos/objetos/televisor_color.png"
+    },
+    {
+      "id": 1655,
+      "palabra": "comer",
+      "variante": "blanco_y_negro",
+      "categoria_gramatical": "verbos",
+      "subcategoria": "acciones_diarias",
+      "categoria_semantica": "rutina",
+      "descripcion": "accion de ingerir alimentos",
+      "fecha_creacion": "2026-03-26T11:50:41",
+      "image_path": "pictogramas/verbos/acciones_diarias/comer.png"
+    },
+    {
+      "id": 1656,
+      "palabra": "comer",
+      "variante": "color",
+      "categoria_gramatical": "verbos",
+      "subcategoria": "acciones_diarias",
+      "categoria_semantica": "rutina",
+      "descripcion": "accion de ingerir alimentos",
+      "fecha_creacion": "2026-03-26T11:50:41",
+      "image_path": "pictogramas/verbos/acciones_diarias/comer_color.png"
+    },
+    {
+      "id": 1654,
+      "palabra": "estudiar",
+      "variante": "color",
+      "categoria_gramatical": "verbos",
+      "subcategoria": "acciones_diarias",
+      "categoria_semantica": "aprendizaje",
+      "descripcion": "accion de estudiar y hacer tareas",
+      "fecha_creacion": "2026-03-26T11:50:41",
+      "image_path": "pictogramas/verbos/acciones_diarias/estudiar_color.png"
+    },
+    {
+      "id": 1658,
+      "palabra": "lavarse_manos",
+      "variante": "color",
+      "categoria_gramatical": "verbos",
+      "subcategoria": "acciones_diarias",
+      "categoria_semantica": "higiene",
+      "descripcion": "accion de lavarse las manos",
+      "fecha_creacion": "2026-03-26T11:50:41",
+      "image_path": "pictogramas/verbos/acciones_diarias/lavarse_manos_color.png"
+    },
+    {
+      "id": 1657,
+      "palabra": "respirar",
+      "variante": "color",
+      "categoria_gramatical": "verbos",
+      "subcategoria": "acciones_diarias",
+      "categoria_semantica": "respiracion",
+      "descripcion": "accion de inspirar y espirar aire",
+      "fecha_creacion": "2026-03-26T11:50:41",
+      "image_path": "pictogramas/verbos/acciones_diarias/respirar_color.png"
+    },
+    {
+      "id": 1653,
+      "palabra": "romper",
+      "variante": "blanco_y_negro",
+      "categoria_gramatical": "verbos",
+      "subcategoria": "acciones_diarias",
+      "categoria_semantica": "accion",
+      "descripcion": "accion de partir o quebrar un objeto",
+      "fecha_creacion": "2026-03-26T11:50:41",
+      "image_path": "pictogramas/verbos/acciones_diarias/romper.png"
+    },
+    {
+      "id": 1652,
+      "palabra": "trabajar",
+      "variante": "color",
+      "categoria_gramatical": "verbos",
+      "subcategoria": "acciones_diarias",
+      "categoria_semantica": "rutina",
+      "descripcion": "accion de trabajar frente al ordenador",
+      "fecha_creacion": "2026-03-26T11:50:41",
+      "image_path": "pictogramas/verbos/acciones_diarias/trabajar_color.png"
+    }
+  ]
+}

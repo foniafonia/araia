@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Araia | Biblioteca digital</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  </head>
+  <body>
+    <div class="page-shell">
+      <nav class="top-nav">
+        <a class="nav-brand" href="{{ url_for('home') }}">Araia</a>
+        <div class="nav-links">
+          <a href="{{ url_for('home') }}">Buscador</a>
+          <a href="{{ url_for('digital_library') }}">Biblioteca digital</a>
+          <a href="{{ url_for('oca') }}">Oca interactiva</a>
+        </div>
+        <div class="profile-switcher">
+          <form method="post" action="{{ url_for('select_profile') }}" class="inline-form">
+            <select name="profile_name">
+              {% for profile in profiles %}
+              <option value="{{ profile }}" {% if profile == active_profile %}selected{% endif %}>{{ profile }}</option>
+              {% endfor %}
+            </select>
+            <button type="submit" class="compact">Cambiar perfil</button>
+          </form>
+          <form method="post" action="{{ url_for('create_profile') }}" class="inline-form">
+            <input type="text" name="new_profile_name" placeholder="Nuevo perfil">
+            <button type="submit" class="secondary compact">Crear</button>
+          </form>
+        </div>
+      </nav>
+
+      <header class="hero hero-compact">
+        <div class="hero-copy">
+          <p class="eyebrow">Selección personal</p>
+          <h1>Biblioteca digital clasificada para cada usuario.</h1>
+          <p class="hero-text">Aquí guardas los pictos que quieres reutilizar rápido en sesiones, materiales y juegos.</p>
+        </div>
+        <div class="hero-stats">
+          <article class="stat-card">
+            <span>Pictos guardados</span>
+            <strong>{{ total }}</strong>
+          </article>
+          <article class="stat-card">
+            <span>Perfil activo</span>
+            <strong>{{ active_profile }}</strong>
+          </article>
+        </div>
+      </header>
+
+      <section class="panel library-panel">
+        <div class="library-header">
+          <div>
+            <p class="eyebrow">Acciones</p>
+            <h2>Tu selección</h2>
+          </div>
+          <form method="get" action="{{ url_for('oca') }}" class="oca-launch-form">
+            {% for record in records %}
+            <input type="hidden" name="selected_paths" value="{{ record.ruta_archivo }}">
+            {% endfor %}
+            <input type="text" name="player_one" placeholder="Jugador 1" value="Jugador 1">
+            <input type="text" name="player_two" placeholder="Jugador 2" value="Jugador 2">
+            <button type="submit">Jugar a la oca con toda la biblioteca</button>
+          </form>
+        </div>
+
+        <form method="get" action="{{ url_for('oca') }}">
+          <div class="results-grid">
+            {% for record in records %}
+            <article class="picto-card">
+              <div class="picto-media">
+                <img src="{{ url_for('media') }}?path={{ record.ruta_archivo | urlencode }}" alt="{{ record.palabra }}">
+              </div>
+              <div class="picto-body">
+                <label class="select-card">
+                  <input type="checkbox" name="selected_paths" value="{{ record.ruta_archivo }}" checked>
+                  <span>Usar en la oca</span>
+                </label>
+                <div class="picto-title">
+                  <h3>{{ record.palabra }}</h3>
+                  <span class="badge">{{ record.variante or "blanco_y_negro" }}</span>
+                </div>
+                <p class="meta">{{ record.categoria_gramatical }}{% if record.subcategoria %} · {{ record.subcategoria }}{% endif %}</p>
+                <div class="card-actions">
+                  <a class="action-link" href="{{ url_for('download') }}?path={{ record.ruta_archivo | urlencode }}">Descargar al PC</a>
+                  <form method="post" action="{{ url_for('remove_from_library') }}">
+                    <input type="hidden" name="path" value="{{ record.ruta_archivo }}">
+                    <button type="submit" class="secondary compact">Quitar</button>
+                  </form>
+                </div>
+              </div>
+            </article>
+            {% else %}
+            <article class="empty-state">
+              <h3>No has guardado pictogramas todavía</h3>
+              <p>Vuelve al buscador y usa el botón "Guardar en biblioteca digital".</p>
+            </article>
+            {% endfor %}
+          </div>
+          {% if records %}
+          <div class="submit-row">
+            <input type="text" name="player_one" placeholder="Jugador 1" value="Jugador 1">
+            <input type="text" name="player_two" placeholder="Jugador 2" value="Jugador 2">
+            <button type="submit">Crear oca con la selección marcada</button>
+          </div>
+          {% endif %}
+        </form>
+      </section>
+    </div>
+  </body>
+</html>

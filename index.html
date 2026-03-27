@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Araia | Visualizador web</title>
+    <link rel="stylesheet" href="static/styles.css">
+    <link rel="stylesheet" href="static/pages.css">
+  </head>
+  <body>
+    <div class="page-shell home-shell static-shell">
+      <nav class="top-nav compact-nav">
+        <a class="nav-brand" href="./index.html">Araia</a>
+        <div class="nav-links">
+          <a href="#buscador">Buscador</a>
+          <a href="#recientes">Recientes</a>
+          <a href="#pedidos">Pedidos</a>
+        </div>
+        <div class="quick-stats" id="quick-stats"></div>
+      </nav>
+
+      <section class="panel search-panel-main" id="buscador">
+        <div class="search-panel-head">
+          <div>
+            <p class="eyebrow">Visualizador GitHub</p>
+            <h1>Encuentra pictogramas rápido</h1>
+          </div>
+        </div>
+
+        <form id="search-form" class="primary-search-form" autocomplete="off">
+          <label class="search-box large-search">
+            <span>Palabra</span>
+            <input type="text" id="search-input" placeholder="comer, barco, rana...">
+          </label>
+          <label>
+            <span>Categoría</span>
+            <select id="category-select">
+              <option value="">Todas</option>
+            </select>
+          </label>
+          <label>
+            <span>Subcategoría</span>
+            <select id="subcategory-select">
+              <option value="">Todas</option>
+            </select>
+          </label>
+          <label>
+            <span>Variante</span>
+            <select id="variant-select">
+              <option value="">Todas</option>
+              <option value="blanco_y_negro">Blanco y negro</option>
+              <option value="color">Color</option>
+            </select>
+          </label>
+        </form>
+
+        <div class="alpha-modes" id="alphabet-modes"></div>
+      </section>
+
+      <section class="panel recent-strip" id="recientes">
+        <div class="panel-head inline-head">
+          <div>
+            <p class="eyebrow">Recientes</p>
+            <h2>Últimos incorporados</h2>
+          </div>
+        </div>
+        <div class="mini-grid recent-mini-grid" id="recent-grid"></div>
+      </section>
+
+      <section class="content-grid home-content-grid">
+        <aside class="panel side-rail compact-rail" id="pedidos">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Participación</p>
+              <h2>Pedidos y notas</h2>
+            </div>
+          </div>
+
+          <details class="mini-section" open>
+            <summary>Solicitar pictograma</summary>
+            <form id="request-form" class="request-form compact-form">
+              <input type="text" id="request-word" placeholder="Palabra" required>
+              <input type="text" id="request-category" placeholder="Categoría">
+              <input type="text" id="request-subcategory" placeholder="Subcategoría">
+              <textarea id="request-detail" rows="3" placeholder="Qué necesitas o para qué"></textarea>
+              <button type="submit" class="compact">Guardar petición</button>
+            </form>
+          </details>
+
+          <details class="mini-section">
+            <summary>Opiniones y sugerencias</summary>
+            <form id="feedback-form" class="request-form compact-form">
+              <select id="feedback-type">
+                <option value="comentario">Comentario</option>
+                <option value="falta">Qué falta</option>
+                <option value="sugerencia">Sugerencia</option>
+                <option value="mejora">Qué mejorarías</option>
+              </select>
+              <input type="text" id="feedback-word" placeholder="Palabra relacionada">
+              <textarea id="feedback-text" rows="3" placeholder="Tu mensaje"></textarea>
+              <button type="submit" class="secondary compact">Guardar opinión</button>
+            </form>
+            <div class="compact-feedback-list" id="feedback-list"></div>
+          </details>
+
+          <div class="daily-batch compact-batch">
+            <p class="mini-label">2 diarios recomendados</p>
+            <div id="request-priority-list"></div>
+          </div>
+        </aside>
+
+        <section class="panel results-panel">
+          <div class="panel-head inline-head">
+            <div>
+              <p class="eyebrow">Resultados</p>
+              <h2 id="results-count">0 pictogramas</h2>
+            </div>
+          </div>
+          <div class="cards-grid" id="results-grid"></div>
+          <div class="empty-state compact-empty-state hidden" id="empty-state">
+            <h3>No hay coincidencias</h3>
+            <p>Prueba otra letra, cambia el modo de búsqueda o limpia filtros.</p>
+          </div>
+        </section>
+      </section>
+    </div>
+
+    <script src="static/pages.js"></script>
+  </body>
+</html>
