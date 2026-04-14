@@ -237,6 +237,7 @@ body::after{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;b
 .seq-strip{display:flex;gap:6px;justify-content:center;align-items:center;width:100%;max-width:640px;margin-bottom:14px;flex-shrink:0;}
 .mini-pic{width:clamp(54px,13vw,74px);height:clamp(54px,13vw,74px);border-radius:11px;overflow:hidden;flex-shrink:0;box-shadow:0 3px 0 rgba(36,26,9,.14);position:relative;}
 .mini-pic svg{position:absolute;inset:0;width:100%;height:100%;}
+.mini-pic img,.rr-illo img,.cat-svg img,.choice-svg-img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:white;}
 .arrow-sep{font-size:1rem;color:var(--muted);flex-shrink:0;}
 .choice-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:640px;flex-shrink:0;}
 .choice-btn{border:none;cursor:pointer;background:none;padding:0;border-radius:18px;overflow:hidden;transition:transform .15s,box-shadow .15s;box-shadow:0 4px 0 rgba(36,26,9,.16),0 5px 16px rgba(36,26,9,.08);aspect-ratio:1;min-height:80px;}
@@ -1717,8 +1718,8 @@ function buildCatsScreen(){
   const g=document.getElementById('cat-grid');g.innerHTML='';
   CATS_DATA.filter(c=>SELECTED_CATS.has(c.id)).forEach(cat=>{
     const b=document.createElement('button');b.className='cat-card';
-    const svg=ILL[cat.catK]||'';
-    b.innerHTML=`<div class="cat-card-inner" style="background:linear-gradient(135deg,${cat.bg},${cat.bg2})"><svg class="cat-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">${svg}</svg><div class="cat-name">${cat.name}</div></div>`;
+    b.innerHTML=`<div class="cat-card-inner" style="background:linear-gradient(135deg,${cat.bg},${cat.bg2})"><div class="cat-svg"></div><div class="cat-name">${cat.name}</div></div>`;
+    renderStaticArasaacVisual(b.querySelector('.cat-svg'), {k:cat.catK,l:cat.name,bg:cat.bg,bg2:cat.bg2}, {imageClass:'cat-svg-img', fallbackClass:'cat-svg-wrap', radius:12});
     b.onclick=()=>startCat(cat);g.appendChild(b);
   });
   // Show/hide score badge
@@ -1980,8 +1981,7 @@ function loadPhase2(){
   q.steps.slice(0,LEVEL).forEach((s,i)=>{
     if(i>0){const a=document.createElement('div');a.className='arrow-sep';a.textContent='→';strip.appendChild(a);}
     const mp=document.createElement('div');mp.className='mini-pic';
-    const svg=ILL[s.k]||`<rect width="100" height="100" fill="${s.bg}" rx="12"/>`;
-    mp.innerHTML=`<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">${svg}</svg>`;
+    renderStaticArasaacVisual(mp, s, {imageClass:'mini-pic-img', fallbackClass:'mini-pic-svg-wrap', radius:12});
     strip.appendChild(mp);
   });
 
@@ -1991,17 +1991,10 @@ function loadPhase2(){
 
   choices.forEach(ch=>{
     const btn=document.createElement('button');btn.className='choice-btn';
-    // Phase 2 choices also support ARASAAC custom images
     const p2sk = curSeqMeta ? makeSlotKey(curSeqMeta.catId, curSeqMeta.seqIdx, 'p2_'+ch.k) : null;
-    const p2custom = p2sk ? ARASAAC.getCustom(p2sk) : null;
-    let choiceVisual;
-    if(p2custom && p2custom.type==='arasaac'){
-      choiceVisual=`<img class="pic-arasaac-img" src="${p2custom.src}" alt="${ch.l}" loading="lazy" onerror="this.style.display='none'">`;
-    } else {
-      const svg=ILL[ch.k]||`<rect width="100" height="100" fill="${ch.bg}" rx="18"/>`;
-      choiceVisual=`<svg class="choice-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">${svg}</svg>`;
-    }
-    btn.innerHTML=`<div class="choice-inner">${choiceVisual}<div class="choice-lbl">${ch.l}</div><div class="choice-badge">${ch.isCorrect?'✓':'✗'}</div></div>`;
+    const p2custom = p2sk ? pictoGet(p2sk) : null;
+    btn.innerHTML=`<div class="choice-inner"><div class="choice-visual"></div><div class="choice-lbl">${ch.l}</div><div class="choice-badge">${ch.isCorrect?'✓':'✗'}</div></div>`;
+    renderStaticArasaacVisual(btn.querySelector('.choice-visual'), ch, {custom:p2custom, imageClass:'choice-svg choice-svg-img', fallbackClass:'choice-svg', radius:18});
     btn.onclick=()=>answerP2(btn,ch.isCorrect,ch.l,grid);
     grid.appendChild(btn);
   });
@@ -2248,24 +2241,25 @@ function showResults(){
   // Per-sequence rows
   const rows=document.getElementById('report-rows');rows.innerHTML='';
   log.forEach(r=>{
-    const svg=ILL[r.key]||'';
-    // Renamed tags — behavioral language, not deficit language
     const p1tag=r.p1ok?`<span class="rr-tag ok">Ordenó en 1ª presentación</span>`:`<span class="rr-tag no">No ordenó en 1ª presentación</span>`;
     const attTag=r.p1attempts>1?`<span class="rr-tag no">${r.p1attempts} presentaciones</span>`:`<span class="rr-tag ok">1 presentación</span>`;
     const p2tag=r.p2correct===true?`<span class="rr-tag ok">Anticipó consecuencia</span>`:r.p2correct===false?`<span class="rr-tag no">No anticipó consecuencia</span>`:'';
     const errTag=r.errorPattern.length&&isInt?`<span class="rr-tag no">Posiciones: ${r.errorPattern.slice(0,3).join(' ')}</span>`:'';
     const custTags=[...(r.tags||[]),...(r.tags2||[])].map(t=>`<span class="rr-tag">${t}</span>`).join('');
     const obs=[r.obs,r.obs2].filter(Boolean).join(' / ');
-    rows.innerHTML+=`<div class="report-row">
-      <div class="rr-illo"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">${svg}</svg></div>
+    const row=document.createElement('div');
+    row.className='report-row';
+    row.innerHTML=`
+      <div class="rr-illo"></div>
       <div class="rr-info">
         <div class="rr-name">${r.seqTitle}</div>
         <div class="rr-detail">${r.steps} pasos</div>
         <div class="rr-tags">${p1tag}${attTag}${p2tag}${errTag}${custTags}</div>
         ${obs?`<div class="rr-obs">📝 ${obs}</div>`:''}
       </div>
-      <div class="rr-score" style="color:var(--muted);font-size:.85rem;">${r.p1ok?'✓':'—'}${USE_P2?(r.p2correct===true?' ✓':r.p2correct===false?' —':''):''}  </div>
-    </div>`;
+      <div class="rr-score" style="color:var(--muted);font-size:.85rem;">${r.p1ok?'✓':'—'}${USE_P2?(r.p2correct===true?' ✓':r.p2correct===false?' —':''):''}  </div>`;
+    renderStaticArasaacVisual(row.querySelector('.rr-illo'), {k:r.key,l:r.key,bg:'#fdf5df',bg2:'#d9c898'}, {imageClass:'rr-illo-img', fallbackClass:'rr-illo-svg-wrap', radius:9});
+    rows.appendChild(row);
   });
 
   // Hypotheses (intervention)
@@ -2425,6 +2419,55 @@ const ARASAAC_BASE = 'https://api.arasaac.org/v1/pictograms/es/search/';
 const ARASAAC_IMG  = 'https://static.arasaac.org/pictograms/';
 const API_TIMEOUT  = 8000;
 const MAX_RESULTS  = 16;
+const BUILTIN_CACHE_KEY = 'iSeq_arasaac_defaults_v2';
+const builtinRequests = new Map();
+const ARASAAC_TERMS = {
+  cepillo:'cepillo dientes',
+  pasta:'pasta de dientes',
+  dientes:'dientes',
+  grifo:'grifo',
+  jabon:'jabon',
+  manos:'lavarse las manos',
+  toalla:'toalla',
+  camiseta:'camiseta',
+  pantalon:'pantalones',
+  calcetines:'calcetines',
+  zapatos:'zapatos',
+  banyo:'baño',
+  pijama:'pijama',
+  libro:'libro',
+  dormir:'dormir',
+  pan:'pan',
+  cuchillo:'cuchillo',
+  queso:'queso',
+  bocadillo:'bocadillo',
+  leche:'leche',
+  microondas:'microondas',
+  cereales:'cereales',
+  cuchara:'cuchara',
+  naranja:'naranja',
+  vaso_zumo:'zumo',
+  mochila:'mochila',
+  coche:'coche',
+  playa:'playa',
+  nadar:'nadar',
+  despertador:'despertador',
+  desayuno:'desayunar',
+  mochila_colegio:'mochila',
+  colegio:'colegio',
+  calendario:'calendario',
+  tarta:'tarta',
+  regalo:'regalo',
+  feliz:'feliz',
+  sol:'sol',
+  nube:'nube',
+  tormenta:'tormenta',
+  miedo:'miedo',
+  llave:'llave',
+  lupa:'buscar',
+  triste:'triste',
+  pensativo:'pensar'
+};
 
 /* ── Persistencia en localStorage ──────────────────────────
    Clave: catId/seqOrigIdx/stepRole  (ej: "h/0/2", "h/0/p2_feliz")
@@ -2438,7 +2481,16 @@ function pictoGet(k){ return lsLoad()[k]||null }
 function pictoSet(k,v){ const d=lsLoad(); d[k]=v; lsSave(d) }
 function pictoDel(k){ const d=lsLoad(); delete d[k]; lsSave(d) }
 
+function builtinLoad(){ try{return JSON.parse(localStorage.getItem(BUILTIN_CACHE_KEY)||'{}')}catch(e){return{}} }
+function builtinSave(d){ try{localStorage.setItem(BUILTIN_CACHE_KEY,JSON.stringify(d))}catch(e){} }
+function builtinGet(k){ return builtinLoad()[k]||null }
+function builtinSet(k,v){ const d=builtinLoad(); d[k]=v; builtinSave(d) }
+
 function slotKey(catId,seqIdx,role){ return `${catId}/${seqIdx}/${role}` }
+
+function normalizeAraText(raw){
+  return (raw||'').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[_-]+/g,' ').replace(/\s+/g,' ').trim();
+}
 
 /* ── API search con fallback multi-término ──────────────── */
 async function arasaacSearch(raw){
@@ -2453,16 +2505,36 @@ async function arasaacSearch(raw){
 }
 
 function makeTerms(raw){
-  const out=[raw];
-  // singular/plural simple
-  if(raw.endsWith('s')&&raw.length>3) out.push(raw.slice(0,-1));
-  else out.push(raw+'s');
-  // quitar artículos
-  const clean=raw.replace(/^(el|la|los|las|un|una|me|mi)\s+/,'').trim();
-  if(clean!==raw&&clean.length>1) out.push(clean);
-  // palabras individuales de frases
-  raw.split(' ').forEach(w=>{ if(w.length>3&&!out.includes(w)) out.push(w); });
+  const base = normalizeAraText(raw);
+  const out=[base];
+  if(base.endsWith('s')&&base.length>3) out.push(base.slice(0,-1));
+  else if(base.length>2) out.push(base+'s');
+  const clean=base.replace(/^(el|la|los|las|un|una|me|mi|mis|lo|las)\s+/,'').trim();
+  if(clean!==base&&clean.length>1) out.push(clean);
+  base.split(' ').forEach(w=>{ if(w.length>2&&!out.includes(w)) out.push(w); });
   return [...new Set(out)].filter(t=>t.length>1);
+}
+
+function candidateTermsForKey(key,label){
+  const terms=[];
+  const mapped=ARASAAC_TERMS[key];
+  if(mapped) terms.push(...makeTerms(mapped));
+  if(label) terms.push(...makeTerms(label));
+  terms.push(...makeTerms(key.replace(/_/g,' ')));
+  return [...new Set(terms)].filter(Boolean);
+}
+
+function arasaacLabel(item, fallbackTerm){
+  const kws = Array.isArray(item.keywords) ? item.keywords : [];
+  for(const kw of kws){
+    if(typeof kw === 'string' && kw.trim()) return kw.trim();
+    if(kw && typeof kw.keyword === 'string' && kw.keyword.trim()) return kw.keyword.trim();
+  }
+  return item.text || item.label || fallbackTerm;
+}
+
+function arasaacId(item){
+  return item._id || item.id || item.pid || item.image_id || item.imageId || null;
 }
 
 async function arasaacFetch(term){
@@ -2474,12 +2546,90 @@ async function arasaacFetch(term){
     if(!res.ok) throw new Error('HTTP '+res.status);
     const data=await res.json();
     if(!Array.isArray(data)) return [];
-    return data.map(item=>({
-      pid:   item._id,
-      label: item.keywords?.[0]?.keyword||term,
-      url:   `${ARASAAC_IMG}${item._id}/${item._id}_300.png`
-    }));
+    return data.map(item=>{
+      const pid = arasaacId(item);
+      const directUrl = item.image || item.thumbnail || item.url || (pid ? `${ARASAAC_IMG}${pid}/${pid}_300.png` : '');
+      return {
+        pid,
+        label: arasaacLabel(item, term),
+        url: directUrl
+      };
+    }).filter(item=>item.url);
   }finally{ clearTimeout(tid); }
+}
+
+async function resolveBuiltInPicto(key,label){
+  const terms = candidateTermsForKey(key,label);
+  for(const term of terms){
+    try{
+      const results = await arasaacFetch(term);
+      if(results.length){
+        const match = results[0];
+        const entry = {type:'arasaac', src:match.url, label:match.label || label || term, pid:match.pid || null};
+        builtinSet(key, entry);
+        return entry;
+      }
+    }catch(e){ /* continue */ }
+  }
+  return null;
+}
+
+function ensureBuiltInPicto(key,label,onReady){
+  if(!key || builtinRequests.has(key)) return;
+  builtinRequests.set(key, true);
+  resolveBuiltInPicto(key,label)
+    .then(result=>{ if(result && typeof onReady === 'function') onReady(result); })
+    .finally(()=>builtinRequests.delete(key));
+}
+
+function fallbackSvgMarkup(c, radius=16){
+  return ILL[c.k] || `<rect width="100" height="100" fill="${c.bg||'#fdf5df'}" rx="${radius}"/>`;
+}
+
+function makeVisualNode(c, source, opts={}){
+  const radius = opts.radius ?? 16;
+  if(source && (source.type==='arasaac' || source.type==='upload') && source.src){
+    const img=document.createElement('img');
+    img.className=opts.imageClass || 'pic-vis pic-arasaac-img';
+    img.src=source.src;
+    img.alt=c.l || source.label || c.k || 'pictograma';
+    img.loading='lazy';
+    img.onerror=()=>{
+      const fallback=document.createElement('div');
+      fallback.className=opts.fallbackClass || 'pic-vis pic-svg-wrap';
+      fallback.innerHTML=`<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">${fallbackSvgMarkup(c, radius)}</svg>`;
+      img.replaceWith(fallback);
+    };
+    return img;
+  }
+  const wrap=document.createElement('div');
+  wrap.className=opts.fallbackClass || 'pic-vis pic-svg-wrap';
+  wrap.innerHTML=`<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">${fallbackSvgMarkup(c, radius)}</svg>`;
+  return wrap;
+}
+
+function renderStaticArasaacVisual(container, c, opts={}){
+  if(!container) return;
+  container.innerHTML='';
+  const key = c.k;
+  const chosen = opts.custom || builtinGet(key);
+  container.appendChild(makeVisualNode(c, chosen, opts));
+  if(!opts.custom && key && !chosen){
+    ensureBuiltInPicto(key, c.l, ()=>renderStaticArasaacVisual(container, c, opts));
+  }
+}
+
+function preloadBuiltInPictos(){
+  const keys = new Set();
+  CATS_DATA.forEach(cat=>{
+    keys.add(cat.catK);
+    cat.seqs.forEach(seq=>{
+      seq.steps.forEach(step=>keys.add(step.k));
+      if(seq.correct) keys.add(seq.correct.k);
+      (seq.wrong||[]).forEach(item=>keys.add(item.k));
+    });
+  });
+  keys.forEach(key=>ensureBuiltInPicto(key, ARASAAC_TERMS[key] || key.replace(/_/g,' ')));
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -2535,49 +2685,32 @@ function mkPicHybrid(c, fromSlot, sk){
 }
 
 function renderPicVisual(el,c,custom,sk){
-  // Clear existing visual elements
   el.querySelectorAll('.pic-vis,.pic-lbl,.pic-audio,.pic-edit,.pic-reset').forEach(n=>n.remove());
 
-  // Visual layer
-  let vis;
-  if(custom&&(custom.type==='arasaac'||custom.type==='upload')){
-    const img=document.createElement('img');
-    img.className='pic-vis pic-arasaac-img';
-    img.src=custom.src; img.alt=c.l; img.loading='lazy';
-    // fallback to SVG on error
-    img.onerror=()=>{
-      img.remove();
-      const svg=document.createElement('div');
-      svg.className='pic-vis pic-svg-wrap';
-      svg.innerHTML=`<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">${ILL[c.k]||`<rect width="100" height="100" fill="${c.bg}" rx="16"/>`}</svg>`;
-      el.insertBefore(svg,el.firstChild);
-    };
-    vis=img;
-  } else {
-    const wrap=document.createElement('div');
-    wrap.className='pic-vis pic-svg-wrap';
-    wrap.innerHTML=`<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">${ILL[c.k]||`<rect width="100" height="100" fill="${c.bg}" rx="16"/>`}</svg>`;
-    vis=wrap;
-  }
+  const source = custom || builtinGet(c.k);
+  const vis = makeVisualNode(c, source, {radius:16});
+  vis.classList.add('pic-vis');
+  if(source && (source.type==='arasaac' || source.type==='upload')) vis.classList.add('pic-arasaac-img');
+  else vis.classList.add('pic-svg-wrap');
   el.appendChild(vis);
 
-  // Label
+  if(!custom && !source && c.k){
+    ensureBuiltInPicto(c.k, c.l, ()=>renderPicVisual(el,c,custom,sk));
+  }
+
   const lbl=document.createElement('div');
   lbl.className='pic-lbl'; lbl.textContent=c.l;
   el.appendChild(lbl);
 
-  // Audio button
   const aud=document.createElement('button');
   aud.className='pic-audio'; aud.title='Escuchar'; aud.textContent='🔊';
   el.appendChild(aud);
 
-  // Edit button (always — both modes)
   if(sk){
     const edit=document.createElement('button');
     edit.className='pic-edit'; edit.title='Cambiar imagen'; edit.textContent='✏️';
     el.appendChild(edit);
 
-    // Reset only if custom
     if(custom){
       const rst=document.createElement('button');
       rst.className='pic-reset'; rst.title='Restaurar original'; rst.textContent='↩';
@@ -2585,7 +2718,6 @@ function renderPicVisual(el,c,custom,sk){
     }
   }
 }
-
 /* ═══════════════════════════════════════════════════════════
    PICKER — Bottom sheet modal
 ═══════════════════════════════════════════════════════════ */
@@ -2758,7 +2890,7 @@ async function homeSearch(){
 }
 
 /* Boot ARASAAC */
-function initArasaac(){ /* UI is in static HTML, nothing to inject */ }
+function initArasaac(){ preloadBuiltInPictos(); }
 
 
 goHome();
