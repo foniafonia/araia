@@ -438,6 +438,21 @@ body::after{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;b
 .boot-title{font-family:'Itim',cursive;font-size:1.35rem;color:var(--ink);margin-bottom:8px;}
 .boot-text{font-size:.82rem;font-weight:700;color:var(--muted);line-height:1.5;}
 .cat-card.busy{pointer-events:none;opacity:.7;transform:none;}
+.profile-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.profile-select,.builder-select{flex:1;min-width:160px;border:2px solid var(--border);border-radius:10px;padding:10px 12px;font-family:'Nunito';font-size:.9rem;background:var(--cream);color:var(--ink);outline:none;}
+.profile-btn,.builder-btn{border:none;cursor:pointer;border-radius:10px;padding:10px 12px;font-family:'Itim',cursive;font-size:.92rem;background:linear-gradient(135deg,var(--sky),var(--violet));color:#fff;}
+.profile-btn.secondary,.builder-btn.secondary{background:var(--cream);color:var(--ink);border:2px solid var(--border);}
+.profile-status,.builder-status{font-size:.72rem;color:var(--muted);font-weight:700;margin-top:6px;line-height:1.5;}
+.cats-actions{width:100%;max-width:520px;padding:12px 18px 0;display:flex;gap:10px;flex-wrap:wrap;}
+.cats-action{flex:1;border:none;cursor:pointer;border-radius:14px;padding:12px 14px;font-family:'Itim',cursive;font-size:1rem;background:linear-gradient(135deg,var(--teal),var(--sage));color:#fff;box-shadow:0 4px 0 #235c30;}
+#builder{background:var(--cream);}
+.builder-card{background:var(--paper);border-radius:22px;padding:22px 20px;width:100%;max-width:560px;margin:0 16px 24px;box-shadow:0 4px 24px rgba(36,26,9,.1);border:1.5px solid var(--border);}
+.builder-grid{display:flex;flex-direction:column;gap:12px;}
+.builder-step{display:grid;grid-template-columns:44px 1fr;gap:8px;align-items:center;}
+.builder-step-num{width:44px;height:44px;border-radius:12px;background:var(--cream);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:'Itim',cursive;color:var(--ink);}
+.builder-help{font-size:.74rem;font-weight:700;color:var(--muted);line-height:1.5;}
+.builder-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;}
+.builder-actions .builder-btn{flex:1;}
 
 </style>
 </head>
@@ -552,6 +567,19 @@ body::after{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;b
   </div>
   <div class="setup-card">
     <div class="setup-section">
+      <span class="setup-label">Perfil guardado</span>
+      <div class="profile-row">
+        <select class="profile-select" id="profile-select"></select>
+        <button class="profile-btn secondary" onclick="loadSelectedProfile()">Cargar</button>
+      </div>
+      <div class="profile-row" style="margin-top:8px;">
+        <input class="setup-input" type="text" id="profile-name" placeholder="Nombre del perfil…" maxlength="40">
+        <button class="profile-btn" onclick="saveCurrentProfile()">Guardar perfil</button>
+        <button class="profile-btn secondary" onclick="deleteSelectedProfile()">Borrar</button>
+      </div>
+      <div class="profile-status" id="profile-status">Puedes guardar perfiles para reutilizar ajustes y pacientes.</div>
+    </div>
+    <div class="setup-section">
       <span class="setup-label">Nombre / código del paciente</span>
       <input class="setup-input" type="text" id="patient-name" placeholder="Ej: Ana, P-03, Sujeto 7…" maxlength="40">
     </div>
@@ -599,6 +627,59 @@ body::after{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;b
     <div class="top-title">¿Qué área<br>practicamos hoy?</div>
   </div>
   <div class="cat-grid" id="cat-grid"></div>
+  <div class="cats-actions">
+    <button class="cats-action" onclick="openBuilder()">+ Crear secuencia propia</button>
+  </div>
+</div>
+
+<!-- ══ BUILDER ══ -->
+<div class="scr off" id="builder">
+  <div class="top-bar" style="max-width:560px;">
+    <button class="back" onclick="closeBuilder()">←</button>
+    <div class="top-title">Crear secuencia propia</div>
+  </div>
+  <div class="builder-card">
+    <div class="builder-grid">
+      <div class="setup-section">
+        <span class="setup-label">Título de la secuencia</span>
+        <input class="setup-input" type="text" id="builder-title" maxlength="90" placeholder="Ej: ¿Cómo preparo la mochila?">
+      </div>
+      <div class="setup-section">
+        <span class="setup-label">Pregunta final</span>
+        <input class="setup-input" type="text" id="builder-what" maxlength="90" placeholder="Ej: ¿Qué pasará después?">
+      </div>
+      <div class="setup-section">
+        <span class="setup-label">Número de pasos</span>
+        <select class="builder-select" id="builder-step-count" onchange="renderBuilderSteps()">
+          <option value="2">2 pasos</option>
+          <option value="3" selected>3 pasos</option>
+          <option value="4">4 pasos</option>
+        </select>
+      </div>
+      <div class="setup-section">
+        <span class="setup-label">Pasos</span>
+        <div id="builder-steps"></div>
+      </div>
+      <div class="setup-section">
+        <span class="setup-label">Respuesta correcta</span>
+        <input class="setup-input" type="text" id="builder-correct" maxlength="60" placeholder="Ej: Ya estoy listo">
+      </div>
+      <div class="setup-section">
+        <span class="setup-label">Respuestas incorrectas</span>
+        <div class="builder-grid">
+          <input class="setup-input" type="text" id="builder-wrong-1" maxlength="60" placeholder="Opción incorrecta 1">
+          <input class="setup-input" type="text" id="builder-wrong-2" maxlength="60" placeholder="Opción incorrecta 2">
+          <input class="setup-input" type="text" id="builder-wrong-3" maxlength="60" placeholder="Opción incorrecta 3">
+        </div>
+      </div>
+      <div class="builder-help">Las imágenes se resolverán con ARASAAC usando el texto que escribas. Luego aparecerán en la categoría Mis secuencias.</div>
+      <div class="builder-status" id="builder-status">Aún no has guardado ninguna secuencia propia.</div>
+      <div class="builder-actions">
+        <button class="builder-btn secondary" onclick="closeBuilder()">Cancelar</button>
+        <button class="builder-btn" onclick="saveCustomSequence()">Guardar secuencia</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- ══ SESSION BOOT ══ -->
@@ -1603,6 +1684,8 @@ const CATS_DATA = [
    STATE
 ════════════════════════════════════════════ */
 let MODE='practice';         // 'intervention'|'practice'
+const PROFILE_STORE_KEY='iSeq_profiles_v1';
+const CUSTOM_SEQ_KEY='iSeq_custom_sequences_v1';
 let currentCatId='';          // for ARASAAC slotKey
 let currentSeqOrigIdx=[];     // original seq indices (stable slotKeys)
 let curSeqMeta=null;          // {catId, seqIdx} for current q
@@ -1658,6 +1741,26 @@ function goHome(){
 }
 function goContext(){show('context');}
 
+function loadProfiles(){ try{return JSON.parse(localStorage.getItem(PROFILE_STORE_KEY)||'[]')}catch(e){return[]} }
+function saveProfiles(list){ try{localStorage.setItem(PROFILE_STORE_KEY,JSON.stringify(list))}catch(e){} }
+function loadCustomSequences(){ try{return JSON.parse(localStorage.getItem(CUSTOM_SEQ_KEY)||'[]')}catch(e){return[]} }
+function saveCustomSequencesData(list){ try{localStorage.setItem(CUSTOM_SEQ_KEY,JSON.stringify(list))}catch(e){} }
+function sequenceColor(i){ const palette=[[ '#3a80b5','#1e4a80' ],[ '#c9531f','#8a3010' ],[ '#4e7d52','#2a4f2c' ],[ '#7c5cbf','#4a3090' ]]; return palette[i % palette.length]; }
+function slugifyKey(label){ const norm=(label||'').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,''); return norm || 'item'; }
+function createSeqItem(label, idx){ const colors=sequenceColor(idx); return {l:label.trim(), k:slugifyKey(label), bg:colors[0], bg2:colors[1]}; }
+function getAvailableCats(){ const cats=CATS_DATA.map(cat=>({...cat, seqs:[...cat.seqs]})); const custom=loadCustomSequences(); if(custom.length){ cats.push({id:'u', name:'Mis secuencias', bg:'#2f8f80', bg2:'#1a5f52', catK:(custom[0].steps&&custom[0].steps[0]&&custom[0].steps[0].k)||'libro', seqs:custom}); } return cats; }
+function refreshProfileSelect(){ const sel=document.getElementById('profile-select'); if(!sel) return; const profiles=loadProfiles(); sel.innerHTML='<option value="">Sin perfil guardado</option>' + profiles.map(p=>`<option value="${p.id}">${p.name}</option>`).join(''); sel.value=CURRENT_PROFILE_ID || ''; }
+function setProfileStatus(msg){ const el=document.getElementById('profile-status'); if(el) el.textContent=msg; }
+function saveCurrentProfile(){ const patient=(document.getElementById('patient-name')?.value||'').trim(); const typed=(document.getElementById('profile-name')?.value||'').trim(); const name=typed || patient; if(!name){ setProfileStatus('Escribe un nombre de perfil antes de guardar.'); return; } const profiles=loadProfiles(); const id=CURRENT_PROFILE_ID || `profile_${Date.now()}`; const existing=profiles.find(p=>p.id===id); const record={ id, name, patientName:patient, goal:(document.getElementById('session-goal')?.value||'').trim(), level:LEVEL, cats:[...SELECTED_CATS], history:(existing&&existing.history)||[], updatedAt:Date.now() }; const idx=profiles.findIndex(p=>p.id===id); if(idx>=0) profiles[idx]=record; else profiles.unshift(record); saveProfiles(profiles); CURRENT_PROFILE_ID=id; refreshProfileSelect(); setProfileStatus(`Perfil guardado: ${name}`); }
+function loadSelectedProfile(){ const sel=document.getElementById('profile-select'); if(!sel || !sel.value){ setProfileStatus('Selecciona un perfil para cargarlo.'); return; } const profile=loadProfiles().find(p=>p.id===sel.value); if(!profile){ setProfileStatus('No se encontró el perfil.'); return; } CURRENT_PROFILE_ID=profile.id; document.getElementById('patient-name').value=profile.patientName || ''; document.getElementById('profile-name').value=profile.name || ''; document.getElementById('session-goal').value=profile.goal || ''; document.getElementById('goal-count').textContent=(profile.goal||'').length; if(profile.level){ LEVEL=profile.level; document.querySelectorAll('.level-btn').forEach((btn, idx)=>btn.classList.toggle('active',[2,3,4][idx]===LEVEL)); } if(profile.cats && profile.cats.length){ SELECTED_CATS=new Set(profile.cats); document.querySelectorAll('.cat-check').forEach(node=>node.classList.toggle('active', SELECTED_CATS.has(node.dataset.id))); } validateSetup(); setProfileStatus(`Perfil cargado: ${profile.name}`); }
+function deleteSelectedProfile(){ const sel=document.getElementById('profile-select'); if(!sel || !sel.value){ setProfileStatus('No hay ningún perfil seleccionado.'); return; } const id=sel.value; const profiles=loadProfiles().filter(p=>p.id!==id); saveProfiles(profiles); if(CURRENT_PROFILE_ID===id) CURRENT_PROFILE_ID=''; refreshProfileSelect(); const input=document.getElementById('profile-name'); if(input) input.value=''; setProfileStatus('Perfil borrado.'); }
+function recordSessionInProfile(){ if(!CURRENT_PROFILE_ID) return; const profiles=loadProfiles(); const idx=profiles.findIndex(p=>p.id===CURRENT_PROFILE_ID); if(idx<0) return; const history=[{ at:Date.now(), patientName:PATIENT || profiles[idx].patientName || profiles[idx].name, score:score, total:sessionLog.length, level:LEVEL }, ...(profiles[idx].history||[])].slice(0,12); profiles[idx]={...profiles[idx], patientName:PATIENT || profiles[idx].patientName, goal:SESSION_GOAL, level:LEVEL, cats:[...SELECTED_CATS], history, updatedAt:Date.now()}; saveProfiles(profiles); }
+function renderBuilderSteps(){ const wrap=document.getElementById('builder-steps'); if(!wrap) return; const count=+(document.getElementById('builder-step-count')?.value || 3); wrap.innerHTML=''; for(let i=0;i<count;i++){ const row=document.createElement('div'); row.className='builder-step'; row.innerHTML=`<div class="builder-step-num">${i+1}</div><input class="setup-input" type="text" data-step-input="${i}" maxlength="60" placeholder="Paso ${i+1}">`; wrap.appendChild(row); } }
+function setBuilderStatus(msg){ const el=document.getElementById('builder-status'); if(el) el.textContent=msg; }
+function openBuilder(){ renderBuilderSteps(); setBuilderStatus('Escribe tu secuencia y guárdala para jugarla luego.'); show('builder'); }
+function closeBuilder(){ show('cats'); }
+async function saveCustomSequence(){ const title=(document.getElementById('builder-title')?.value||'').trim(); const what=(document.getElementById('builder-what')?.value||'').trim() || '¿Qué pasará después?'; const steps=[...document.querySelectorAll('[data-step-input]')].map(node=>node.value.trim()).filter(Boolean); const correct=(document.getElementById('builder-correct')?.value||'').trim(); const wrongs=['1','2','3'].map(n=>(document.getElementById(`builder-wrong-${n}`)?.value||'').trim()).filter(Boolean); if(!title || steps.length<2 || !correct || wrongs.length<2){ setBuilderStatus('Completa título, al menos 2 pasos, una correcta y 2 incorrectas.'); return; } const seq={ t:title, what, steps:steps.map((label,idx)=>createSeqItem(label,idx)), correct:createSeqItem(correct,10), wrong:wrongs.slice(0,3).map((label,idx)=>createSeqItem(label,20+idx)) }; const custom=loadCustomSequences(); custom.unshift(seq); saveCustomSequencesData(custom); SELECTED_CATS.add('u'); buildSetupCats(); await openCatsScreen(()=> MODE==='intervention' ? show('setup') : goHome()); setBuilderStatus('Secuencia guardada. Ya está en Mis secuencias.'); show('cats'); }
+
 function enterIntervention(){
   MODE='intervention';
   if(!ctxFirstSeen){show('context');} else {show('setup');buildSetupCats();}
@@ -1683,9 +1786,10 @@ function ctxConfirm(){
 }
 
 function buildSetupCats(){
+  refreshProfileSelect();
   const g=document.getElementById('setup-cats');g.innerHTML='';
-  const icons={h:'🪥',c:'🍳',a:'⛱️',e:'😊'};
-  CATS_DATA.forEach(cat=>{
+  const icons={h:'🪥',c:'🍳',a:'⛱️',e:'😊',u:'✨'};
+  getAvailableCats().forEach(cat=>{
     const d=document.createElement('div');
     d.className='cat-check active';d.dataset.id=cat.id;
     d.innerHTML=`<span class="cat-check-icon">${icons[cat.id]}</span><span class="cat-check-name">${cat.name}</span>`;
@@ -1724,7 +1828,7 @@ function validateSetup(){
   } else { lw.classList.remove('show'); }
 
   // Low sequence count
-  const totalSeqs=CATS_DATA.filter(c=>SELECTED_CATS.has(c.id)).reduce((s,c)=>s+c.seqs.length,0);
+  const totalSeqs=getAvailableCats().filter(c=>SELECTED_CATS.has(c.id)).reduce((s,c)=>s+c.seqs.length,0);
   if(totalSeqs<3){
     cw.textContent=`Solo ${totalSeqs} secuencia${totalSeqs===1?'':'s'} disponible${totalSeqs===1?'':'s'}. Con menos de 3, el informe tendrá valor muy limitado.`;
     cw.classList.add('show');
@@ -1746,7 +1850,7 @@ async function startFromSetup(){
 
 function buildCatsScreen(){
   const g=document.getElementById('cat-grid');g.innerHTML='';
-  CATS_DATA.filter(c=>SELECTED_CATS.has(c.id)).forEach(cat=>{
+  getAvailableCats().filter(c=>SELECTED_CATS.has(c.id)).forEach(cat=>{
     const b=document.createElement('button');b.className='cat-card';
     b.innerHTML=`<div class="cat-card-inner" style="background:linear-gradient(135deg,${cat.bg},${cat.bg2})"><div class="cat-svg"></div><div class="cat-name">${cat.name}</div></div>`;
     renderStaticArasaacVisual(b.querySelector('.cat-svg'), {k:cat.catK,l:cat.name,bg:cat.bg,bg2:cat.bg2}, {imageClass:'cat-svg-img', fallbackClass:'cat-svg-wrap', radius:12, deferFallback:true});
@@ -2283,6 +2387,7 @@ function showResults(){
   // Report goal
   const rg=document.getElementById('report-goal');
   if(SESSION_GOAL&&isInt){rg.textContent='🎯 Objetivo de sesión: '+SESSION_GOAL;rg.classList.add('show');}else{rg.classList.remove('show');}
+  recordSessionInProfile();
 
   // Patient label
   document.getElementById('report-patient-lbl').textContent=PATIENT?'— '+PATIENT:'';
@@ -2691,7 +2796,7 @@ function renderStaticArasaacVisual(container, c, opts={}){
 
 function preloadBuiltInPictos(){
   const keys = new Set();
-  CATS_DATA.forEach(cat=>{
+  getAvailableCats().forEach(cat=>{
     keys.add(cat.catK);
     cat.seqs.forEach(seq=>{
       seq.steps.forEach(step=>keys.add(step.k));
@@ -2984,6 +3089,8 @@ function initArasaac(){ preloadBuiltInPictos(); }
 
 goHome();
 initArasaac();
+renderBuilderSteps();
+buildSetupCats();
 
 </script>
 </body>
