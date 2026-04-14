@@ -164,7 +164,7 @@ body::after{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;b
 .cat-card:hover{transform:translateY(-5px) rotate(-1deg);box-shadow:0 10px 0 rgba(0,0,0,.12),0 14px 28px rgba(0,0,0,.1);}
 .cat-card:active{transform:scale(.96);}
 .cat-card-inner{padding:20px 12px 14px;display:flex;flex-direction:column;align-items:center;gap:8px;min-height:145px;}
-.cat-svg{width:80px;height:80px;display:block;border-radius:12px;overflow:hidden;}
+.cat-svg{width:80px;height:80px;display:block;border-radius:12px;overflow:hidden;position:relative;}
 .cat-name{font-family:'Itim',cursive;font-size:1rem;color:#fff;text-shadow:0 2px 5px rgba(0,0,0,.3);}
 
 /* ── GAME P1 ── */
@@ -247,6 +247,7 @@ body::after{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;b
 .choice-btn.rev-ok{box-shadow:0 0 0 4px var(--correct),0 6px 20px rgba(46,125,50,.3);}
 .choice-btn.rev-no{box-shadow:0 0 0 4px var(--wrong),0 6px 20px rgba(198,40,40,.2);opacity:.7;}
 .choice-inner{position:relative;width:100%;height:100%;}
+.choice-visual{position:absolute;inset:0;}
 .choice-svg{position:absolute;inset:0;width:100%;height:100%;}
 .choice-lbl{position:absolute;bottom:0;left:0;right:0;z-index:2;font-family:'Itim',cursive;font-size:clamp(.58rem,1.5vw,.7rem);color:#fff;font-weight:700;text-align:center;padding:4px 5px 7px;background:linear-gradient(transparent,rgba(0,0,0,.52));line-height:1.2;border-radius:0 0 18px 18px;}
 .choice-badge{position:absolute;top:7px;right:7px;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.9rem;opacity:0;z-index:3;transition:opacity .25s;box-shadow:0 2px 6px rgba(0,0,0,.2);}
@@ -315,7 +316,7 @@ body::after{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;b
 .report-goal.show{display:block;}
 .report-row{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);}
 .report-row:last-child{border-bottom:none;}
-.rr-illo{width:42px;height:42px;border-radius:9px;overflow:hidden;flex-shrink:0;}
+.rr-illo{width:42px;height:42px;border-radius:9px;overflow:hidden;flex-shrink:0;position:relative;}
 .rr-illo svg{width:100%;height:100%;}
 .rr-info{flex:1;}
 .rr-name{font-size:.84rem;font-weight:800;color:var(--ink);margin-bottom:2px;}
