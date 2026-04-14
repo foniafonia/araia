@@ -431,6 +431,13 @@ body::after{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;b
 .res-topbar{width:100%;max-width:540px;display:flex;align-items:center;gap:12px;margin-bottom:10px;}
 .res-back{background:none;border:none;cursor:pointer;font-size:1.15rem;color:var(--ink);min-width:44px;min-height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background .14s;}
 .res-back:hover{background:rgba(0,0,0,.07);}
+#booting{background:var(--cream);justify-content:center;padding:24px;}
+.boot-card{background:var(--paper);border-radius:22px;padding:28px 22px;width:100%;max-width:420px;margin:0 16px;box-shadow:0 4px 24px rgba(36,26,9,.1);border:1.5px solid var(--border);text-align:center;}
+.boot-spinner{width:56px;height:56px;border-radius:50%;margin:0 auto 14px;border:6px solid #eadfbe;border-top-color:var(--sky);animation:bootspin .9s linear infinite;}
+@keyframes bootspin{to{transform:rotate(360deg);}}
+.boot-title{font-family:'Itim',cursive;font-size:1.35rem;color:var(--ink);margin-bottom:8px;}
+.boot-text{font-size:.82rem;font-weight:700;color:var(--muted);line-height:1.5;}
+.cat-card.busy{pointer-events:none;opacity:.7;transform:none;}
 
 </style>
 </head>
@@ -592,6 +599,15 @@ body::after{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;b
     <div class="top-title">¿Qué área<br>practicamos hoy?</div>
   </div>
   <div class="cat-grid" id="cat-grid"></div>
+</div>
+
+<!-- ══ SESSION BOOT ══ -->
+<div class="scr off" id="booting">
+  <div class="boot-card">
+    <div class="boot-spinner"></div>
+    <div class="boot-title">Preparando ejercicio</div>
+    <div class="boot-text" id="boot-text">Estamos cargando los pictogramas necesarios antes de empezar.</div>
+  </div>
 </div>
 
 <!-- ══ GAME P1 ══ -->
@@ -1607,6 +1623,7 @@ const ghost=document.getElementById('ghost');
 
 let p1ok=false, p2answered=false;
 let attempts=0;
+let startingSession=false;
 const MAX_ATT=3;
 let tapCard=null;
 let audioOn=true, hcOn=false;
@@ -1752,6 +1769,11 @@ async function openCatsScreen(backHandler){
    GAME START
 ════════════════════════════════════════════ */
 async function startCat(cat){
+  if(startingSession) return;
+  startingSession = true;
+  document.querySelectorAll('.cat-card').forEach(card=>card.classList.add('busy'));
+  document.getElementById('boot-text').textContent=`Estamos preparando ${cat.name.toLowerCase()} con los pictogramas necesarios.`;
+  show('booting');
   currentCatId = cat.id;
   const allSeqs = [...cat.seqs];
   const shuffledIdxs = allSeqs.map((_,i)=>i).sort(()=>Math.random()-.5).slice(0,Math.min(4,allSeqs.length));
@@ -1773,9 +1795,15 @@ async function startCat(cat){
   document.getElementById('p2-pause-btn').classList.toggle('show',showT);
   document.getElementById('obs-panel').classList.toggle('show',showT&&USE_LOG);
   document.getElementById('p2-obs-toggle').classList.toggle('show',showT&&USE_LOG);
-  await warmCurrentSessionPictos();
-  buildTagsUI();
-  show('game');loadQ();
+  try{
+    await warmCurrentSessionPictos();
+    buildTagsUI();
+    show('game');
+    loadQ();
+  } finally {
+    startingSession = false;
+    document.querySelectorAll('.cat-card').forEach(card=>card.classList.remove('busy'));
+  }
 }
 
 function buildTagsUI(){
