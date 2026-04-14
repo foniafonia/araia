@@ -423,6 +423,13 @@ body::after{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;b
 .home-picto-card span{font-size:.58rem;font-weight:700;color:var(--ink);text-align:center;line-height:1.2;max-width:66px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .home-ara-attr{font-size:.62rem;color:var(--muted);text-align:center;}
 .home-ara-attr a{color:var(--sky);text-decoration:none;}
+.ara-skel{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;border-radius:inherit;background:linear-gradient(135deg,#fff7e6,#f4ead1);color:var(--muted);font-size:1.1rem;font-weight:900;}
+.ip-actions{display:flex;gap:10px;margin-top:14px;}
+.ip-back{flex:1;border:2px solid var(--border);cursor:pointer;border-radius:14px;padding:11px 12px;font-family:'Itim',cursive;font-size:1rem;background:var(--cream);color:var(--ink);}
+.ip-next{flex:1;}
+.res-topbar{width:100%;max-width:540px;display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+.res-back{background:none;border:none;cursor:pointer;font-size:1.15rem;color:var(--ink);min-width:44px;min-height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background .14s;}
+.res-back:hover{background:rgba(0,0,0,.07);}
 
 </style>
 </head>
@@ -636,7 +643,7 @@ body::after{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;b
 <!-- ══ INTER-SEQUENCE PAUSE (intervention) ══ -->
 <div class="scr off" id="inter-pause">
   <div class="top-bar" style="max-width:460px;">
-    <div style="flex:1"></div>
+    <button class="back" onclick="backFromPause()">←</button>
     <div class="top-title" style="font-size:1rem;text-align:center;">Momento de observación</div>
     <div style="flex:1"></div>
   </div>
@@ -647,7 +654,10 @@ body::after{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;b
     <div class="ip-obs-label">¿Qué observaste en esta secuencia?</div>
     <textarea class="ip-obs-input" id="ip-obs-input" placeholder="Notas libres..."></textarea>
     <div class="ip-tags" id="ip-tags"></div>
-    <button class="ip-next" onclick="continueFromPause()">Continuar →</button>
+    <div class="ip-actions">
+      <button class="ip-back" onclick="backFromPause()">← Volver</button>
+      <button class="ip-next" onclick="continueFromPause()">Continuar →</button>
+    </div>
   </div>
 </div>
 
@@ -683,6 +693,10 @@ body::after{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;b
 <!-- ══ RESULTS ══ -->
 <div class="scr off" id="results">
   <div class="res-wrap">
+    <div class="res-topbar">
+      <button class="res-back" onclick="backFromResults()">←</button>
+      <div class="res-context-tag" style="margin-bottom:0;">Volver</div>
+    </div>
     <div class="res-context-tag" id="res-context-tag"></div>
     <div class="res-title" id="res-title">Sesión completada</div>
     <!-- confidence band -->
@@ -1630,12 +1644,11 @@ function enterIntervention(){
   MODE='intervention';
   if(!ctxFirstSeen){show('context');} else {show('setup');buildSetupCats();}
 }
-function enterPractice(){
+async function enterPractice(){
   MODE='practice';
   LEVEL=4;USE_P2=true;USE_AUDIO=true;USE_LOG=false;PATIENT='';SESSION_GOAL='';
   SELECTED_CATS=new Set(['h','c','a','e']);
-  buildCatsScreen();show('cats');
-  document.getElementById('cats-back').onclick=goHome;
+  await openCatsScreen(goHome);
 }
 
 let selectedCtx=null;
@@ -1704,14 +1717,13 @@ function validateSetup(){
   if(!pat){sl.textContent='▶  Iniciar sin identificar paciente';} else {sl.textContent='▶  Iniciar sesión';}
 }
 
-function startFromSetup(){
+async function startFromSetup(){
   PATIENT=document.getElementById('patient-name').value.trim();
   SESSION_GOAL=document.getElementById('session-goal').value.trim();
   USE_P2=document.getElementById('tog-p2').checked;
   USE_AUDIO=document.getElementById('tog-audio').checked;
   USE_LOG=document.getElementById('tog-log').checked;
-  buildCatsScreen();show('cats');
-  document.getElementById('cats-back').onclick=()=>show('setup');
+  await openCatsScreen(()=>show('setup'));
 }
 
 function buildCatsScreen(){
@@ -1719,7 +1731,7 @@ function buildCatsScreen(){
   CATS_DATA.filter(c=>SELECTED_CATS.has(c.id)).forEach(cat=>{
     const b=document.createElement('button');b.className='cat-card';
     b.innerHTML=`<div class="cat-card-inner" style="background:linear-gradient(135deg,${cat.bg},${cat.bg2})"><div class="cat-svg"></div><div class="cat-name">${cat.name}</div></div>`;
-    renderStaticArasaacVisual(b.querySelector('.cat-svg'), {k:cat.catK,l:cat.name,bg:cat.bg,bg2:cat.bg2}, {imageClass:'cat-svg-img', fallbackClass:'cat-svg-wrap', radius:12});
+    renderStaticArasaacVisual(b.querySelector('.cat-svg'), {k:cat.catK,l:cat.name,bg:cat.bg,bg2:cat.bg2}, {imageClass:'cat-svg-img', fallbackClass:'cat-svg-wrap', radius:12, deferFallback:true});
     b.onclick=()=>startCat(cat);g.appendChild(b);
   });
   // Show/hide score badge
@@ -1728,33 +1740,39 @@ function buildCatsScreen(){
   document.getElementById('p2-score-badge').style.display=showScore?'':'none';
 }
 
+async function openCatsScreen(backHandler){
+  await warmCatIcons();
+  buildCatsScreen();
+  show('cats');
+  document.getElementById('cats-back').onclick=backHandler;
+}
+
 /* ════════════════════════════════════════════
    GAME START
 ════════════════════════════════════════════ */
-function startCat(cat){
-  // ── Hard reset all session state ──────────────────────────
-  currentCatId = cat.id;   // track for slotKey generation
+async function startCat(cat){
+  currentCatId = cat.id;
   const allSeqs = [...cat.seqs];
   const shuffledIdxs = allSeqs.map((_,i)=>i).sort(()=>Math.random()-.5).slice(0,Math.min(4,allSeqs.length));
   curSeqs = shuffledIdxs.map(i=>allSeqs[i]);
-  currentSeqOrigIdx = shuffledIdxs;  // original indices for stable slotKeys
+  currentSeqOrigIdx = shuffledIdxs;
   qIdx=0; score=0; curSeqMeta=null;
   maxScore=curSeqs.length*(USE_P2?20:10);
-  sessionLog=[];          // clear previous session log
+  sessionLog=[];
   sessionStart=Date.now();
-  curRec={};              // will be initialized in loadQ
+  curRec={};
   attempts=0;
   p1ok=false;
   p2answered=false;
   tapCard=null;
   dragEl=null;
   dragSrc=null;
-  // ──────────────────────────────────────────────────────────
   const showT=MODE==='intervention';
   document.getElementById('pause-btn').classList.toggle('show',showT);
   document.getElementById('p2-pause-btn').classList.toggle('show',showT);
   document.getElementById('obs-panel').classList.toggle('show',showT&&USE_LOG);
   document.getElementById('p2-obs-toggle').classList.toggle('show',showT&&USE_LOG);
+  await warmCurrentSessionPictos();
   buildTagsUI();
   show('game');loadQ();
 }
@@ -1954,6 +1972,8 @@ function showInterPause(){
   document.querySelectorAll('#ip-tags .ip-tag').forEach(t=>t.classList.remove('active'));
   show('inter-pause');
 }
+
+function backFromPause(){ show('game'); }
 
 function continueFromPause(){
   // Merge obs from inter-pause into record
@@ -2359,6 +2379,10 @@ function doPause(){
 }
 function doResume(){document.getElementById('pause-ov').classList.remove('on');}
 function endSession(){document.getElementById('pause-ov').classList.remove('on');showResults();}
+function backFromResults(){
+  show('cats');
+}
+
 function playAgain(){
   // Clear session-specific state so new session starts clean
   SESSION_GOAL='';
@@ -2575,11 +2599,22 @@ async function resolveBuiltInPicto(key,label){
 }
 
 function ensureBuiltInPicto(key,label,onReady){
-  if(!key || builtinRequests.has(key)) return;
-  builtinRequests.set(key, true);
-  resolveBuiltInPicto(key,label)
-    .then(result=>{ if(result && typeof onReady === 'function') onReady(result); })
+  if(!key) return Promise.resolve(null);
+  const existing = builtinGet(key);
+  if(existing){
+    if(typeof onReady === 'function') onReady(existing);
+    return Promise.resolve(existing);
+  }
+  if(builtinRequests.has(key)){
+    const pending = builtinRequests.get(key);
+    if(typeof onReady === 'function') pending.then(result=>{ if(result) onReady(result); });
+    return pending;
+  }
+  const pending = resolveBuiltInPicto(key,label)
+    .then(result=>{ if(result && typeof onReady === 'function') onReady(result); return result; })
     .finally(()=>builtinRequests.delete(key));
+  builtinRequests.set(key, pending);
+  return pending;
 }
 
 function fallbackSvgMarkup(c, radius=16){
@@ -2588,6 +2623,12 @@ function fallbackSvgMarkup(c, radius=16){
 
 function makeVisualNode(c, source, opts={}){
   const radius = opts.radius ?? 16;
+  if(!source && opts.deferFallback){
+    const skel=document.createElement('div');
+    skel.className='ara-skel';
+    skel.textContent='…';
+    return skel;
+  }
   if(source && (source.type==='arasaac' || source.type==='upload') && source.src){
     const img=document.createElement('img');
     img.className=opts.imageClass || 'pic-vis pic-arasaac-img';
@@ -2630,6 +2671,25 @@ function preloadBuiltInPictos(){
     });
   });
   keys.forEach(key=>ensureBuiltInPicto(key, ARASAAC_TERMS[key] || key.replace(/_/g,' ')));
+}
+
+function warmKeys(keys){
+  const tasks = [...new Set(keys)].filter(Boolean).map(key=>ensureBuiltInPicto(key, ARASAAC_TERMS[key] || key.replace(/_/g,' ')));
+  return Promise.all(tasks);
+}
+
+function warmCatIcons(){
+  return warmKeys(CATS_DATA.filter(c=>SELECTED_CATS.has(c.id)).map(c=>c.catK));
+}
+
+function warmCurrentSessionPictos(){
+  const keys = [];
+  curSeqs.forEach(seq=>{
+    seq.steps.slice(0, LEVEL).forEach(step=>keys.push(step.k));
+    if(seq.correct) keys.push(seq.correct.k);
+    (seq.wrong || []).forEach(item=>keys.push(item.k));
+  });
+  return warmKeys(keys);
 }
 
 /* ═══════════════════════════════════════════════════════════
